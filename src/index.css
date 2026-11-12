@@ -1,0 +1,69 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens (7.1). Components never hard-code hex values. Space-separated RGB for Tailwind alpha. */
+:root {
+  --bg: 255 255 255; /* #FFFFFF */
+  --surface: 246 248 247; /* #F6F8F7 */
+  --border: 229 233 231; /* #E5E9E7 */
+  --text: 10 10 10; /* #0A0A0A */
+  --text-muted: 95 107 102; /* #5F6B66 */
+  --green: 34 197 94; /* #22C55E */
+  --green-strong: 21 128 61; /* #15803D */
+  --green-soft: 232 249 238; /* #E8F9EE */
+  --blue: 37 99 235; /* #2563EB */
+  --blue-soft: 234 241 254; /* #EAF1FE */
+  --black: 10 10 10; /* #0A0A0A */
+  --amber: 217 119 6; /* #D97706 */
+  --amber-soft: 254 243 226;
+  --red: 220 38 38; /* #DC2626 */
+  --red-soft: 253 236 236;
+  --acc-food: 34 197 94;
+  --acc-workout: 37 99 235;
+  --acc-learning: 14 165 233; /* #0EA5E9 */
+  --acc-finance: 10 10 10;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-bg font-sans text-body text-text antialiased;
+  -webkit-tap-highlight-color: transparent;
+  font-feature-settings: 'cv11';
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--blue));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
