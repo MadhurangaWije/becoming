@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from '@/components/ui';
-import { useUi } from './uiStore';
 
 /** Shows "Update available" when a new service worker is waiting, instead of reloading silently. */
 export function PwaUpdater() {
@@ -9,16 +7,6 @@ export function PwaUpdater() {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({ immediate: true });
-  const setInstallPrompt = useUi((s) => s.setInstallPrompt);
-
-  useEffect(() => {
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as Event & { prompt: () => Promise<void> });
-    };
-    window.addEventListener('beforeinstallprompt', onPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', onPrompt);
-  }, [setInstallPrompt]);
 
   if (!needRefresh) return null;
   return (

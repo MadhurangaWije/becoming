@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InstallButton } from '@/components/Install';
+import { InstallButton, IosInstallFirst } from '@/components/Install';
 import { DisciplineIcon, label } from '@/components/discipline';
 import { Button, Field, Stepper, inputClass } from '@/components/ui';
 import { defaultSettings } from '@/domain/config';
@@ -75,6 +75,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <>
             <h1 className="text-title">Become who you said you would.</h1>
             <p className="text-muted">Four daily disciplines. Your future self keeps score.</p>
+            <IosInstallFirst />
             <Field label="Your name">
               <input className={inputClass} value={s.name} onChange={(e) => set({ name: e.target.value })} autoComplete="given-name" placeholder="Name" />
             </Field>

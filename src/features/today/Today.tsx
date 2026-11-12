@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTodayView } from '@/app/hooks';
 import { useUi } from '@/app/uiStore';
 import { FutureSelfFigure } from '@/components/FutureSelf';
+import { InstallCard } from '@/components/Install';
 import { Ring, RingLegend } from '@/components/Ring';
 import { ACCENT, DisciplineIcon, SCORE_LABEL, label, statName } from '@/components/discipline';
 import { Button, money } from '@/components/ui';
@@ -45,6 +46,8 @@ export function TodayScreen() {
           </p>
         </div>
       </section>
+
+      <InstallCard />
 
       {view.horizonReached && (
         <Link to="/settings#future" className="block rounded-card border border-blue bg-blue-soft p-3 text-blue">
