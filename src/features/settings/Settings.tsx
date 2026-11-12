@@ -1,16 +1,17 @@
-import { HardDrive, Plus, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Download, HardDrive, Plus, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useSettings } from '@/app/hooks';
 import { InstallButton } from '@/components/Install';
 import { DisciplineIcon, label } from '@/components/discipline';
 import { Button, Card, Chip, Field, SectionTitle, Stepper, inputClass } from '@/components/ui';
 import type { Discipline, MealSlot, Settings } from '@/domain/types';
 import { DISCIPLINES } from '@/domain/types';
-import { BackupError, clearAll, downloadJson, exportAll, importAll, validateBackup } from '@/data/backup';
+import { clearAll, exportAll, saveBackup } from '@/data/backup';
 import { settingsRepo } from '@/data/repos';
 import { stamp } from '@/services/clock';
 import { permission, requestPermission, scheduleDailyReminders } from '@/services/notifications';
 import { DebugPanel } from './DebugPanel';
+import { RestoreBackup } from './RestoreBackup';
 
 export function SettingsScreen() {
   const settings = useSettings();
@@ -198,9 +199,7 @@ function NotificationRow() {
 }
 
 function DataSection({ settings }: { settings: Settings }) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState('');
-  const [pending, setPending] = useState<ReturnType<typeof validateBackup> | null>(null);
   const [confirmReset, setConfirmReset] = useState('');
   const [showReset, setShowReset] = useState(false);
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -211,21 +210,10 @@ function DataSection({ settings }: { settings: Settings }) {
 
   const doExport = async () => {
     const at = stamp();
-    const data = await exportAll(at);
-    downloadJson(data, `becoming-backup-${at.slice(0, 10)}.json`);
+    const outcome = await saveBackup(await exportAll(at));
+    if (outcome === 'cancelled') return setMsg('Export cancelled.');
     await settingsRepo.patch({ lastExportedAt: at });
-    setMsg('Backup exported.');
-  };
-
-  const onFile = async (f: File | undefined) => {
-    if (!f) return;
-    try {
-      setPending(validateBackup(JSON.parse(await f.text())));
-      setMsg('');
-    } catch (e) {
-      setMsg(e instanceof BackupError ? e.message : 'Could not read that file.');
-    }
-    if (fileRef.current) fileRef.current.value = '';
+    setMsg(outcome === 'shared' ? 'Backup shared. Keep it somewhere off this phone.' : 'Backup downloaded. Keep a copy somewhere off this device.');
   };
 
   return (
@@ -239,39 +227,16 @@ function DataSection({ settings }: { settings: Settings }) {
           Request persistent storage
         </Button>
       )}
+      <p className="text-[15px] text-muted">
+        Everything lives only on this device. Export a backup to move to a new phone or keep a safe copy. The file contains all your data in an open JSON format.
+      </p>
       <p className="text-[15px] text-muted">Last exported: {settings.lastExportedAt ? new Date(settings.lastExportedAt).toLocaleString('en-GB') : 'never'}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={doExport}>
-          Export backup
-        </Button>
-        <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-          Import backup
-        </Button>
-        <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} aria-label="Backup file" />
-      </div>
-      {pending && (
-        <div role="alertdialog" aria-label="Confirm import" className="space-y-3 rounded-xl border border-amber/40 bg-amber-soft p-3">
-          <p>
-            Replace all data on this device with the backup from {new Date(pending.exportedAt).toLocaleString('en-GB')}? This cannot be undone.
-          </p>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setPending(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={async () => {
-                await importAll(pending);
-                setPending(null);
-                setMsg('Backup restored.');
-              }}
-            >
-              Replace my data
-            </Button>
-          </div>
-        </div>
-      )}
+      <Button variant="secondary" onClick={doExport}>
+        <Download size={18} aria-hidden /> Export backup
+      </Button>
       {msg && <p role="status" className="text-[15px]">{msg}</p>}
+      <RestoreBackup replacing />
+
 
       <div className="border-t border-border pt-4">
         {!showReset ? (

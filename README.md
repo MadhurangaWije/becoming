@@ -16,6 +16,10 @@ npm run icons      # regenerate PNG icons (no dependencies)
 
 Dev builds have a **Debug** section at the bottom of Settings: set the clock (to test day close, decay, streaks) and seed 90 days of realistic data.
 
+## Your data
+
+All data lives on the device (IndexedDB). **Settings → Export backup** saves everything to one JSON file (on phones it opens the share sheet: Save to Files, Drive, AirDrop, email). On a new phone, choose **Restore from backup** on the first onboarding screen. The file format is documented in [docs/backup-format.md](docs/backup-format.md), which is also the contract for migrating to a backend later.
+
 ## Layout
 
 ```

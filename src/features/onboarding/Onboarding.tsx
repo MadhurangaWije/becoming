@@ -9,6 +9,7 @@ import { DISCIPLINES } from '@/domain/types';
 import { settingsRepo } from '@/data/repos';
 import { now, stamp } from '@/services/clock';
 import { requestPermission } from '@/services/notifications';
+import { RestoreBackup } from '@/features/settings/RestoreBackup';
 
 const STEPS = ['You', 'Goals', 'Why', 'Future you', 'Reminders'] as const;
 
@@ -87,6 +88,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
                 onChange={(e) => set({ monthlyBudget: Number(e.target.value.replace(/[^\d]/g, '')) || 0 })}
               />
             </Field>
+            <section aria-label="Restore from backup" className="space-y-2 border-t border-border pt-5">
+              <h2 className="font-semibold">Moving from another phone?</h2>
+              <p className="text-[15px] text-muted">Restore the backup you exported from Settings on your old device. Your logs, levels, streaks and messages come with it.</p>
+              <RestoreBackup label="Restore from backup" replacing={false} onRestored={onDone} />
+            </section>
           </>
         )}
 

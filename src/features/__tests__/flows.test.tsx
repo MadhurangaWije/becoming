@@ -133,3 +133,36 @@ describe('logging flows', () => {
     await waitFor(async () => expect((await settingsRepo.get())?.lastExpenseCategory).toBe('Transport'));
   });
 });
+
+describe('moving to a new phone', () => {
+  it('restores a backup from the first onboarding screen and lands on Today', async () => {
+    // build a backup on the "old phone"
+    await onboarded();
+    await settingsRepo.patch({ name: 'OldPhone' });
+    await db.learning.add({ id: 'l1', day: today(), summary: 'Carried over', createdAt: 'x', updatedAt: 'x' });
+    const { exportAll } = await import('@/data/backup');
+    const backup = await exportAll(new Date().toISOString());
+    await clearAll();
+
+    const user = userEvent.setup();
+    render(<App memory={['/']} />);
+    expect(await screen.findByText('Moving from another phone?')).toBeInTheDocument();
+    const file = new File([JSON.stringify(backup)], 'becoming-backup.json', { type: 'application/json' });
+    await user.upload(screen.getByTestId('backup-file'), file);
+    const confirm = await screen.findByRole('alertdialog', { name: 'Confirm restore' });
+    expect(confirm).toHaveTextContent('1 entries');
+    await user.click(within(confirm).getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
+    expect((await settingsRepo.get())?.name).toBe('OldPhone');
+    expect(await db.learning.count()).toBe(1);
+  });
+
+  it('rejects a file that is not a backup', async () => {
+    const user = userEvent.setup();
+    render(<App memory={['/']} />);
+    await screen.findByText('Moving from another phone?');
+    await user.upload(screen.getByTestId('backup-file'), new File(['{"hello":1}'], 'x.json', { type: 'application/json' }));
+    expect(await screen.findByText('This file is not a Becoming backup.')).toBeInTheDocument();
+    expect(await db.settings.count()).toBe(0);
+  });
+});

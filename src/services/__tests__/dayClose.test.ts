@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDays } from '@/domain/dates';
 import { db } from '@/data/db';
-import { exportAll, importAll, validateBackup, clearAll } from '@/data/backup';
+import { exportAll, importAll, validateBackup, clearAll, migrateBackup } from '@/data/backup';
 import { settingsRepo } from '@/data/repos';
 import { buildContext, runTrigger } from '../companion';
 import { runDayClose } from '../dayClose';
@@ -169,5 +169,41 @@ describe('backup (8)', () => {
   it('rejects files that are not a backup or are from a newer version', () => {
     expect(() => validateBackup({ foo: 1 })).toThrow('not a Becoming backup');
     expect(() => validateBackup({ format: 'becoming-backup', version: 99, tables: {} })).toThrow('Unsupported backup version');
+  });
+});
+
+describe('backup validation and migration', () => {
+  const base = async () => JSON.parse(JSON.stringify(await exportAll('2026-03-04T10:00:00.000Z')));
+
+  it('includes counts and app info', async () => {
+    await onboard();
+    const f = await base();
+    expect(f.counts.settings).toBe(1);
+    expect(f.app.name).toBe('Becoming');
+  });
+
+  it('rejects truncated files, missing settings, and versions without an upgrade path', async () => {
+    await onboard();
+    await saveEntries(perfectDrafts(FIRST), at(FIRST, 20));
+    const f = await base();
+    f.tables.food.pop();
+    expect(() => validateBackup(f)).toThrow('truncated');
+    const g = await base();
+    g.tables.settings = [];
+    g.counts.settings = 0;
+    expect(() => validateBackup(g)).toThrow('no settings');
+    const h = { ...(await base()), version: 0 };
+    expect(() => validateBackup(h)).toThrow('Unsupported backup version');
+  });
+
+  it('accepts files without counts (older exports)', async () => {
+    await onboard();
+    const f = await base();
+    delete f.counts;
+    expect(validateBackup(f).tables.settings).toHaveLength(1);
+  });
+
+  it('migrateBackup errors when a step is missing', () => {
+    expect(() => migrateBackup({ format: 'becoming-backup', version: -1, exportedAt: '', tables: {} as never })).toThrow('No upgrade path');
   });
 });
